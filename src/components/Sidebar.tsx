@@ -2,16 +2,39 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ClipboardList, Truck, Wrench } from "lucide-react";
+import {
+  LayoutDashboard,
+  ClipboardList,
+  Truck,
+  Wrench,
+  LogOut,
+} from "lucide-react";
+import { cerrarSesion } from "@/lib/auth-actions";
+import type { Enums } from "@/types/database";
 
-const nav = [
+type NavItem = { href: string; label: string; icon: typeof LayoutDashboard };
+
+const navAdmin: NavItem[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/ordenes", label: "Órdenes de Trabajo", icon: ClipboardList },
   { href: "/tecnico", label: "Ruta del Técnico", icon: Truck },
 ];
 
-export function Sidebar() {
+const navTecnico: NavItem[] = [
+  { href: "/tecnico", label: "Mis Órdenes", icon: ClipboardList },
+];
+
+export function Sidebar({
+  rol,
+  nombre,
+}: {
+  rol: Enums<"rol_usuario">;
+  nombre: string;
+}) {
   const pathname = usePathname();
+  const nav = rol === "tecnico" ? navTecnico : navAdmin;
+  const rolLabel =
+    rol === "admin" ? "Administrador" : rol === "coordinador" ? "Coordinador" : "Técnico";
 
   return (
     <>
@@ -24,6 +47,7 @@ export function Sidebar() {
             <p className="text-xs text-white/60">Control de Mantención</p>
           </div>
         </div>
+
         <nav className="flex-1 px-3 py-4 space-y-1">
           {nav.map(({ href, label, icon: Icon }) => {
             const active = pathname === href;
@@ -43,10 +67,34 @@ export function Sidebar() {
             );
           })}
         </nav>
-        <div className="px-6 py-4 text-xs text-white/40 border-t border-white/10">
-          Demo · datos de ejemplo
+
+        <div className="px-4 py-4 border-t border-white/10">
+          <p className="text-sm font-medium truncate">{nombre}</p>
+          <p className="text-xs text-white/50 mb-3">{rolLabel}</p>
+          <form action={cerrarSesion}>
+            <button
+              type="submit"
+              className="flex items-center gap-2 text-sm text-white/70 hover:text-white transition-colors"
+            >
+              <LogOut className="h-4 w-4" />
+              Cerrar sesión
+            </button>
+          </form>
         </div>
       </aside>
+
+      {/* Barra superior en móvil */}
+      <header className="md:hidden sticky top-0 z-20 bg-brand-dark text-white flex items-center justify-between px-4 h-14">
+        <div className="flex items-center gap-2">
+          <Wrench className="h-5 w-5" />
+          <span className="font-semibold text-sm">Cooprinsem</span>
+        </div>
+        <form action={cerrarSesion}>
+          <button type="submit" className="text-white/70">
+            <LogOut className="h-5 w-5" />
+          </button>
+        </form>
+      </header>
 
       {/* Barra inferior en móvil */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 z-20 bg-brand-dark text-white flex justify-around border-t border-white/10">

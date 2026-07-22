@@ -1,5 +1,8 @@
+import Link from "next/link";
+import { Plus } from "lucide-react";
 import { EstadoBadge } from "@/components/EstadoBadge";
 import { formatFecha } from "@/lib/format";
+import { requireAdmin } from "@/lib/auth";
 import { getOrdenes } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
@@ -11,17 +14,27 @@ const prioridadLabel: Record<number, { label: string; className: string }> = {
 };
 
 export default async function OrdenesPage() {
+  await requireAdmin();
   const ordenes = await getOrdenes();
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold text-foreground">
-          Órdenes de Trabajo
-        </h1>
-        <p className="text-sm text-muted">
-          {ordenes.length} órdenes registradas — flujo completo de mantención
-        </p>
+      <header className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">
+            Órdenes de Trabajo
+          </h1>
+          <p className="text-sm text-muted">
+            {ordenes.length} órdenes registradas — flujo completo de mantención
+          </p>
+        </div>
+        <Link
+          href="/ordenes/nueva"
+          className="inline-flex items-center gap-2 rounded-lg bg-brand-dark text-white px-4 py-2 text-sm font-medium hover:bg-brand transition-colors whitespace-nowrap"
+        >
+          <Plus className="h-4 w-4" />
+          Nueva OT
+        </Link>
       </header>
 
       <div className="bg-surface rounded-xl border border-border shadow-sm overflow-hidden">

@@ -1,19 +1,84 @@
-import { MapPin, Package, ArrowDownToLine, CheckCircle2, Circle } from "lucide-react";
-import { getRutasDia } from "@/lib/queries";
+import {
+  MapPin,
+  Package,
+  ArrowDownToLine,
+  CheckCircle2,
+  Circle,
+} from "lucide-react";
+import { EstadoBadge } from "@/components/EstadoBadge";
+import { requireUser, getTecnicoActual } from "@/lib/auth";
+import { getOrdenes, getRutasDia } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
 
 export default async function TecnicoPage() {
-  const rutas = await getRutasDia();
+  const sesion = await requireUser();
+  const esTecnico = sesion.perfil?.rol === "tecnico";
+  const tecnico = esTecnico ? await getTecnicoActual(sesion.userId) : null;
+
+  const tecnicoId = tecnico?.id;
+  const [ordenes, rutas] = await Promise.all([
+    esTecnico ? getOrdenes({ tecnicoId }) : Promise.resolve([]),
+    getRutasDia(tecnicoId),
+  ]);
+
+  const activas = ordenes.filter(
+    (o) => o.estado !== "cerrada" && o.estado !== "cancelada"
+  );
 
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-bold text-foreground">Ruta del Técnico</h1>
+        <h1 className="text-2xl font-bold text-foreground">
+          {esTecnico ? `Hola, ${tecnico?.nombre ?? sesion.perfil?.nombre}` : "Ruta del Técnico"}
+        </h1>
         <p className="text-sm text-muted">
-          Entregas y retiros de repuestos asignados
+          {esTecnico
+            ? "Tus órdenes asignadas y tu ruta del día"
+            : "Entregas y retiros de repuestos asignados"}
         </p>
       </header>
+
+      {/* Órdenes asignadas al técnico */}
+      {esTecnico && (
+        <section className="bg-surface rounded-xl border border-border shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-border">
+            <h2 className="font-semibold text-foreground">
+              Mis órdenes asignadas ({activas.length})
+            </h2>
+          </div>
+          {activas.length === 0 ? (
+            <p className="px-5 py-6 text-sm text-muted">
+              No tienes órdenes activas asignadas.
+            </p>
+          ) : (
+            <ul className="divide-y divide-border">
+              {activas.map((o) => (
+                <li key={o.id} className="px-5 py-3 flex items-center gap-4">
+                  <span className="font-mono text-xs text-muted w-10">
+                    #{o.folio}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="truncate text-sm font-medium">
+                      {o.clientes?.nombre ?? "—"}
+                    </p>
+                    <p className="truncate text-xs text-muted">
+                      {o.descripcion_falla}
+                      {o.repuestos ? ` · ${o.repuestos.nombre} (${o.repuestos.sku})` : ""}
+                    </p>
+                  </div>
+                  <EstadoBadge estado={o.estado} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
+
+      {/* Rutas del día */}
+      <h2 className="text-lg font-semibold text-foreground pt-2">
+        {esTecnico ? "Mi ruta de hoy" : "Rutas del día"}
+      </h2>
 
       {rutas.length === 0 && (
         <div className="bg-surface rounded-xl border border-border p-8 text-center text-muted">

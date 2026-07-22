@@ -1,8 +1,9 @@
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/server";
 import type { Tables } from "@/types/database";
 
 /** KPIs principales del dashboard. */
 export async function getDashboardKpis() {
+  const supabase = await createClient();
   const [arriendo, ordenes, tecnicos] = await Promise.all([
     supabase.from("v_repuestos_en_arriendo").select("monto_acumulado"),
     supabase.from("ordenes_trabajo").select("estado"),
@@ -33,6 +34,7 @@ export async function getDashboardKpis() {
 export async function getRepuestosEnArriendo(): Promise<
   Tables<"v_repuestos_en_arriendo">[]
 > {
+  const supabase = await createClient();
   const { data } = await supabase
     .from("v_repuestos_en_arriendo")
     .select("*")
@@ -44,6 +46,7 @@ export async function getRepuestosEnArriendo(): Promise<
 export async function getMargenRepuestos(): Promise<
   Tables<"v_margen_repuestos">[]
 > {
+  const supabase = await createClient();
   const { data } = await supabase
     .from("v_margen_repuestos")
     .select("*")
@@ -55,6 +58,7 @@ export async function getMargenRepuestos(): Promise<
 export async function getProductividadTecnicos(): Promise<
   Tables<"v_productividad_tecnicos">[]
 > {
+  const supabase = await createClient();
   const { data } = await supabase
     .from("v_productividad_tecnicos")
     .select("*")
@@ -74,30 +78,22 @@ export type OrdenConRelaciones = {
   tecnicos: { nombre: string } | null;
 };
 
-/** Órdenes de trabajo con cliente, repuesto y técnico. */
-export async function getOrdenes(limit?: number): Promise<OrdenConRelaciones[]> {
+/** Órdenes de trabajo con cliente, repuesto y técnico. Filtra por técnico si se indica. */
+export async function getOrdenes(opts?: {
+  limit?: number;
+  tecnicoId?: string;
+}): Promise<OrdenConRelaciones[]> {
+  const supabase = await createClient();
   let query = supabase
     .from("ordenes_trabajo")
     .select(
       "id,folio,estado,prioridad,descripcion_falla,fecha_reporte,clientes(nombre),repuestos(nombre,sku),tecnicos(nombre)"
     )
     .order("fecha_reporte", { ascending: false });
-  if (limit) query = query.limit(limit);
+  if (opts?.tecnicoId) query = query.eq("tecnico_id", opts.tecnicoId);
+  if (opts?.limit) query = query.limit(opts.limit);
   const { data } = await query;
   return (data ?? []) as unknown as OrdenConRelaciones[];
-}
-
-/** Distribución de OTs por estado (para gráfico). */
-export async function getDistribucionEstados() {
-  const { data } = await supabase.from("ordenes_trabajo").select("estado");
-  const counts = new Map<string, number>();
-  for (const row of data ?? []) {
-    counts.set(row.estado, (counts.get(row.estado) ?? 0) + 1);
-  }
-  return Array.from(counts.entries()).map(([estado, total]) => ({
-    estado,
-    total,
-  }));
 }
 
 export type ParadaRuta = {
@@ -122,13 +118,56 @@ export type RutaDia = {
   ruta_paradas: ParadaRuta[];
 };
 
-/** Rutas del día con sus paradas (vista del técnico). */
-export async function getRutasDia(): Promise<RutaDia[]> {
-  const { data } = await supabase
+/** Rutas del día con sus paradas. Filtra por técnico si se indica. */
+export async function getRutasDia(tecnicoId?: string): Promise<RutaDia[]> {
+  const supabase = await createClient();
+  let query = supabase
     .from("rutas")
     .select(
       "id,fecha,estado,tecnicos(nombre),vehiculos(patente,modelo),ruta_paradas(id,secuencia,tipo,completada,ordenes_trabajo(folio,descripcion_falla,clientes(nombre,direccion),repuestos(nombre,sku)))"
     )
     .order("fecha", { ascending: false });
+  if (tecnicoId) query = query.eq("tecnico_id", tecnicoId);
+  const { data } = await query;
   return (data ?? []) as unknown as RutaDia[];
+}
+
+// ---------- Listas para el formulario de creación de OT ----------
+
+export async function getClientes() {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("clientes")
+    .select("id,nombre,direccion")
+    .order("nombre");
+  return data ?? [];
+}
+
+export async function getRepuestos() {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("repuestos")
+    .select("id,nombre,sku")
+    .order("nombre");
+  return data ?? [];
+}
+
+export async function getTecnicos() {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("tecnicos")
+    .select("id,nombre")
+    .eq("activo", true)
+    .order("nombre");
+  return data ?? [];
+}
+
+export async function getVehiculos() {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("vehiculos")
+    .select("id,patente,modelo,tecnico_id")
+    .eq("activo", true)
+    .order("patente");
+  return data ?? [];
 }

@@ -10,6 +10,7 @@ import { EstadoBadge } from "@/components/EstadoBadge";
 import { MargenChart } from "@/components/charts/MargenChart";
 import { ProductividadChart } from "@/components/charts/ProductividadChart";
 import { formatCLP, formatFecha } from "@/lib/format";
+import { requireAdmin } from "@/lib/auth";
 import {
   getDashboardKpis,
   getMargenRepuestos,
@@ -21,12 +22,13 @@ import {
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
+  await requireAdmin();
   const [kpis, margen, productividad, enArriendo, ordenes] = await Promise.all([
     getDashboardKpis(),
     getMargenRepuestos(),
     getProductividadTecnicos(),
     getRepuestosEnArriendo(),
-    getOrdenes(6),
+    getOrdenes({ limit: 6 }),
   ]);
 
   return (
