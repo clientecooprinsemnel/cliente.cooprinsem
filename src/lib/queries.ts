@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import type { Tables } from "@/types/database";
+import type { Tables, Enums } from "@/types/database";
 
 /** KPIs principales del dashboard. */
 export async function getDashboardKpis() {
@@ -94,6 +94,71 @@ export async function getOrdenes(opts?: {
   if (opts?.limit) query = query.limit(opts.limit);
   const { data } = await query;
   return (data ?? []) as unknown as OrdenConRelaciones[];
+}
+
+export type OrdenDetalle = {
+  id: string;
+  folio: number;
+  estado: Enums<"estado_ot">;
+  prioridad: number;
+  descripcion_falla: string | null;
+  fecha_reporte: string;
+  fecha_asignacion: string | null;
+  fecha_cierre: string | null;
+  clientes: { nombre: string; direccion: string | null; telefono: string | null } | null;
+  repuestos: { nombre: string; sku: string; arriendo_diario: number } | null;
+  tecnicos: { nombre: string } | null;
+  vehiculos: { patente: string; modelo: string | null } | null;
+};
+
+/** Detalle completo de una OT con sus relaciones. */
+export async function getOrdenDetalle(id: string): Promise<OrdenDetalle | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("ordenes_trabajo")
+    .select(
+      "id,folio,estado,prioridad,descripcion_falla,fecha_reporte,fecha_asignacion,fecha_cierre,clientes(nombre,direccion,telefono),repuestos(nombre,sku,arriendo_diario),tecnicos(nombre),vehiculos(patente,modelo)"
+    )
+    .eq("id", id)
+    .maybeSingle();
+  return (data as unknown as OrdenDetalle) ?? null;
+}
+
+export type HistorialItem = {
+  id: string;
+  estado_anterior: Enums<"estado_ot"> | null;
+  estado_nuevo: Enums<"estado_ot">;
+  created_at: string;
+  nombre: string | null;
+};
+
+/** Historial de cambios de estado de una OT (con el nombre de quién lo hizo). */
+export async function getOrdenHistorial(id: string): Promise<HistorialItem[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("ot_historial")
+    .select("id,estado_anterior,estado_nuevo,created_at,cambiado_por")
+    .eq("orden_trabajo_id", id)
+    .order("created_at", { ascending: true });
+
+  const rows = data ?? [];
+  const ids = [...new Set(rows.map((r) => r.cambiado_por).filter(Boolean))] as string[];
+  let nombres = new Map<string, string>();
+  if (ids.length) {
+    const { data: perfiles } = await supabase
+      .from("perfiles")
+      .select("id,nombre")
+      .in("id", ids);
+    nombres = new Map((perfiles ?? []).map((p) => [p.id, p.nombre]));
+  }
+
+  return rows.map((r) => ({
+    id: r.id,
+    estado_anterior: r.estado_anterior,
+    estado_nuevo: r.estado_nuevo,
+    created_at: r.created_at,
+    nombre: r.cambiado_por ? nombres.get(r.cambiado_por) ?? null : null,
+  }));
 }
 
 export type ParadaRuta = {

@@ -60,8 +60,13 @@ export default async function OrdenesPage() {
                     key={o.id}
                     className="border-b border-border last:border-0 hover:bg-slate-50"
                   >
-                    <td className="px-5 py-3 font-mono text-xs text-muted">
-                      #{o.folio}
+                    <td className="px-5 py-3 font-mono text-xs">
+                      <Link
+                        href={`/ordenes/${o.id}`}
+                        className="text-brand hover:underline"
+                      >
+                        #{o.folio}
+                      </Link>
                     </td>
                     <td className="px-5 py-3 font-medium whitespace-nowrap">
                       {o.clientes?.nombre ?? "—"}

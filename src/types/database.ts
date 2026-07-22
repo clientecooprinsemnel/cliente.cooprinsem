@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      ot_historial: {
+        Row: {
+          id: string
+          orden_trabajo_id: string
+          estado_anterior: Database["public"]["Enums"]["estado_ot"] | null
+          estado_nuevo: Database["public"]["Enums"]["estado_ot"]
+          cambiado_por: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          orden_trabajo_id: string
+          estado_anterior?: Database["public"]["Enums"]["estado_ot"] | null
+          estado_nuevo: Database["public"]["Enums"]["estado_ot"]
+          cambiado_por?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          orden_trabajo_id?: string
+          estado_anterior?: Database["public"]["Enums"]["estado_ot"] | null
+          estado_nuevo?: Database["public"]["Enums"]["estado_ot"]
+          cambiado_por?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
       clientes: {
         Row: {
           created_at: string

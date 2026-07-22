@@ -20,6 +20,18 @@ export function formatFecha(iso: string | null | undefined): string {
   }).format(new Date(iso));
 }
 
+/** Formatea una fecha ISO a fecha + hora es-CL. */
+export function formatFechaHora(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  return new Intl.DateTimeFormat("es-CL", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(iso));
+}
+
 type EstadoOT = Enums<"estado_ot">;
 
 /** Etiqueta legible para cada estado de OT. */

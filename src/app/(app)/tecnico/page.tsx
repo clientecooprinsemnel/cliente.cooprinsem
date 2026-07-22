@@ -9,7 +9,7 @@ import { EstadoBadge } from "@/components/EstadoBadge";
 import { requireUser, getTecnicoActual } from "@/lib/auth";
 import { getOrdenes, getRutasDia } from "@/lib/queries";
 import { siguienteTransicion } from "@/lib/estados";
-import { avanzarEstado } from "./actions";
+import { avanzarEstado } from "@/lib/ot-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -93,7 +93,7 @@ export default async function TecnicoPage() {
                           />
                           <button
                             type="submit"
-                            className="text-xs font-medium text-brand hover:text-brand-dark whitespace-nowrap"
+                            className="rounded-lg border border-brand text-brand hover:bg-brand-soft active:bg-brand-soft px-3 py-2 text-xs font-medium whitespace-nowrap"
                           >
                             {trans.accion} →
                           </button>
