@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, MapPin, Phone, Package, User, Truck } from "lucide-react";
 import { EstadoBadge } from "@/components/EstadoBadge";
-import { requireAdmin } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { getOrdenDetalle, getOrdenHistorial } from "@/lib/queries";
 import { avanzarEstado } from "@/lib/ot-actions";
 import { siguienteTransicion } from "@/lib/estados";
@@ -37,25 +37,28 @@ export default async function OrdenDetallePage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireAdmin();
+  const sesion = await requireUser();
   const { id } = await params;
   const [ot, historial] = await Promise.all([
     getOrdenDetalle(id),
     getOrdenHistorial(id),
   ]);
+  // RLS: un técnico solo obtiene datos de sus propias OTs; el resto -> notFound.
   if (!ot) notFound();
 
+  const esTecnico = sesion.perfil?.rol === "tecnico";
+  const volverHref = esTecnico ? "/tecnico" : "/ordenes";
   const trans = siguienteTransicion(ot.estado);
 
   return (
     <div className="space-y-6 max-w-3xl">
       <header>
         <Link
-          href="/ordenes"
+          href={volverHref}
           className="inline-flex items-center gap-1 text-sm text-muted hover:text-foreground mb-2"
         >
           <ArrowLeft className="h-4 w-4" />
-          Volver a Órdenes
+          {esTecnico ? "Volver a Mis Órdenes" : "Volver a Órdenes"}
         </Link>
         <div className="flex items-center gap-3 flex-wrap">
           <h1 className="text-2xl font-bold text-foreground">OT #{ot.folio}</h1>

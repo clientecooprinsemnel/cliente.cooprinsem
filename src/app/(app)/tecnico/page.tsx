@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   MapPin,
   Package,
@@ -62,20 +63,25 @@ export default async function TecnicoPage() {
                     key={o.id}
                     className="px-5 py-3 flex items-center gap-4"
                   >
-                    <span className="font-mono text-xs text-muted w-10">
-                      #{o.folio}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <p className="truncate text-sm font-medium">
-                        {o.clientes?.nombre ?? "—"}
-                      </p>
-                      <p className="truncate text-xs text-muted">
-                        {o.descripcion_falla}
-                        {o.repuestos
-                          ? ` · ${o.repuestos.nombre} (${o.repuestos.sku})`
-                          : ""}
-                      </p>
-                    </div>
+                    <Link
+                      href={`/ordenes/${o.id}`}
+                      className="flex items-center gap-4 flex-1 min-w-0 hover:opacity-70 transition-opacity"
+                    >
+                      <span className="font-mono text-xs text-muted w-10">
+                        #{o.folio}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium">
+                          {o.clientes?.nombre ?? "—"}
+                        </p>
+                        <p className="truncate text-xs text-muted">
+                          {o.descripcion_falla}
+                          {o.repuestos
+                            ? ` · ${o.repuestos.nombre} (${o.repuestos.sku})`
+                            : ""}
+                        </p>
+                      </div>
+                    </Link>
                     <div className="flex flex-col items-end gap-2 shrink-0">
                       <EstadoBadge estado={o.estado} />
                       {trans && (
