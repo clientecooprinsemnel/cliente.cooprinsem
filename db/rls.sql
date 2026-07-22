@@ -73,6 +73,10 @@ create policy ot_select on ordenes_trabajo for select to authenticated
   using (public.es_admin() or tecnico_id = public.mi_tecnico_id());
 create policy ot_admin_write on ordenes_trabajo for all to authenticated
   using (public.es_admin()) with check (public.es_admin());
+-- El técnico puede avanzar el estado de sus propias órdenes.
+create policy ot_tecnico_update on ordenes_trabajo for update to authenticated
+  using (tecnico_id = public.mi_tecnico_id())
+  with check (tecnico_id = public.mi_tecnico_id());
 
 -- ---------- Rutas: admin todo; técnico solo las suyas ----------
 create policy rutas_select on rutas for select to authenticated

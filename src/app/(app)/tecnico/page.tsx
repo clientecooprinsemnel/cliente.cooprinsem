@@ -8,6 +8,8 @@ import {
 import { EstadoBadge } from "@/components/EstadoBadge";
 import { requireUser, getTecnicoActual } from "@/lib/auth";
 import { getOrdenes, getRutasDia } from "@/lib/queries";
+import { siguienteTransicion } from "@/lib/estados";
+import { avanzarEstado } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -53,23 +55,54 @@ export default async function TecnicoPage() {
             </p>
           ) : (
             <ul className="divide-y divide-border">
-              {activas.map((o) => (
-                <li key={o.id} className="px-5 py-3 flex items-center gap-4">
-                  <span className="font-mono text-xs text-muted w-10">
-                    #{o.folio}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <p className="truncate text-sm font-medium">
-                      {o.clientes?.nombre ?? "—"}
-                    </p>
-                    <p className="truncate text-xs text-muted">
-                      {o.descripcion_falla}
-                      {o.repuestos ? ` · ${o.repuestos.nombre} (${o.repuestos.sku})` : ""}
-                    </p>
-                  </div>
-                  <EstadoBadge estado={o.estado} />
-                </li>
-              ))}
+              {activas.map((o) => {
+                const trans = siguienteTransicion(o.estado);
+                return (
+                  <li
+                    key={o.id}
+                    className="px-5 py-3 flex items-center gap-4"
+                  >
+                    <span className="font-mono text-xs text-muted w-10">
+                      #{o.folio}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="truncate text-sm font-medium">
+                        {o.clientes?.nombre ?? "—"}
+                      </p>
+                      <p className="truncate text-xs text-muted">
+                        {o.descripcion_falla}
+                        {o.repuestos
+                          ? ` · ${o.repuestos.nombre} (${o.repuestos.sku})`
+                          : ""}
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end gap-2 shrink-0">
+                      <EstadoBadge estado={o.estado} />
+                      {trans && (
+                        <form action={avanzarEstado}>
+                          <input type="hidden" name="ot_id" value={o.id} />
+                          <input
+                            type="hidden"
+                            name="estado_actual"
+                            value={o.estado}
+                          />
+                          <input
+                            type="hidden"
+                            name="estado_destino"
+                            value={trans.siguiente}
+                          />
+                          <button
+                            type="submit"
+                            className="text-xs font-medium text-brand hover:text-brand-dark whitespace-nowrap"
+                          >
+                            {trans.accion} →
+                          </button>
+                        </form>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </section>
